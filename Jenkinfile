@@ -1,39 +1,42 @@
-pipeline{
+pipeline {
+    agent any
 
-	agent any
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[url:'https://github.com/SaiNikhil-26/DockerJenkin.git']]])
+            }
+        }
 
-	environment {
-		DOCKERHUB_CREDENTIALS=credentials('Sainikhil_docker')
-	}
+        stage('Build Image') {
+            steps {
+                // Build your Docker image
+                script {
+                    sh 'docker build -t Dockerjenkins:latest .'
+                }
+            }
+        }
 
-	stages {
+        stage('Push Image to Docker Hub') {
+            steps {
+                // Push the Docker image to Docker Hub
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'Sai_docker', usernameVariable: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
+                        sh "docker login --username ${DOCKER_HUB_USERNAME} -p ${DOCKER_HUB_PASSWORD}"
+                        sh 'docker tag tomcat:latest sai/dockerjenkins:latest'
+                        sh 'docker push sai/dockerjenkins:latest'
+                    }
+                }
+            }
+        }
+    }
 
-		stage('Build') {
-
-			steps {
-				sh 'docker build -t tomcat/dockerjenkins:latest -f Dockerfile .'
-			}
-		}
-
-		stage('Login') {
-
-			steps {
-				sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
-			}
-		}
-
-		stage('Push') {
-
-			steps {
-				sh 'docker tag tomcat/dockerjenkins:latest sai/dockerjenkins:latest'
-				sh 'docker push sai/dockerjenkins:latest'
-			}
-		}
-	}
-
-	post {
-		always {
-			sh 'docker logout'
-		}
-	}
+    post {
+        success {
+            echo 'CI/CD Pipeline completed successfully!'
+        }
+        failure {
+            echo 'CI/CD Pipeline failed. Check logs for details.'
+        }
+    }
 }
