@@ -12,7 +12,7 @@ pipeline {
             steps {
                 // Build your Docker image
                 script {
-                    sh 'docker build -t Dockerjenkins:latest .'
+                    sh 'docker build -t dockerjenkins:latest .'
                 }
             }
         }
@@ -23,7 +23,7 @@ pipeline {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'Sai_docker', usernameVariable: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
                         sh "docker login --username ${DOCKER_HUB_USERNAME} -p ${DOCKER_HUB_PASSWORD}"
-                        sh 'docker tag tomcat:latest sai/dockerjenkins:latest'
+                        sh 'docker tag dockerjenkins:latest sai/dockerjenkins:latest'
                         sh 'docker push sai/dockerjenkins:latest'
                     }
                 }
